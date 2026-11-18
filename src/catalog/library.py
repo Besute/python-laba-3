@@ -24,7 +24,7 @@ class Item:
 
     @property
     def id(self) -> str:
-
+        """Getter for __id"""
         return self.__id
 
 
@@ -34,13 +34,17 @@ class Library:
     __container: dict = field(default_factory=dict, init=False)
 
     def add(self, item: Item) -> None:
+        """Add item to library"""
         self.__container[item.id] = item
 
     def get(self, item_id: str) -> Item:
+        """Get item from library"""
 
         return self.__container[item_id]
 
     def remove(self, item_id: str) -> int:
+        """Remove item from library"""
+
         if item_id in self.__container:
             del self.__container[item_id]
 
@@ -49,6 +53,8 @@ class Library:
         raise EntityNotFound("ID was not found")
 
     def find_by_category(self, category: str) -> tuple:
+        """Find item by category"""
+
         found = []
         for data in self.__container.values():
             if data.category == category:
@@ -57,6 +63,8 @@ class Library:
         return tuple(found)
 
     def find_by_name(self, name: str) -> tuple:
+        """Find item by name"""
+
         found = []
         for data in self.__container.values():
             if data.name == name:
