@@ -1,5 +1,6 @@
 import time
 from dataclasses import dataclass, field
+from .errors import EntityNotFound
 
 @dataclass
 class Item:
@@ -45,7 +46,7 @@ class Library:
 
             return 0
 
-        return -1
+        raise EntityNotFound("ID was not found")
 
     def find_by_category(self, category: str) -> tuple:
         found = []
@@ -71,11 +72,3 @@ class Library:
 
     def __contains__(self, item_id: str) -> bool:
         return item_id in self.__container
-
-
-lib = Library("123")
-lib.add(Item(name="HELLO", category="python"))
-lib.add(Item(name="HELLO2", category="python2"))
-
-for i in lib:
-    print(i)

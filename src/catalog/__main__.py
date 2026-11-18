@@ -1,5 +1,13 @@
+from .library import Item, Library
+
 def main():
-    pass
+    lib = Library("123")
+    lib.add(Item(name="HELLO", category="python"))
+    lib.add(Item(name="HELLO2", category="python2"))
+
+    for i in lib:
+        print(i)
+
 
 if __name__ == "__main__":
     main()
