@@ -1,6 +1,6 @@
 import time
 from dataclasses import dataclass, field
-from .errors import EntityNotFound
+from .errors import EntityNotFound, DuplicateIDError
 
 @dataclass
 class Item:
@@ -25,17 +25,37 @@ class Item:
     @property
     def id(self) -> str:
         """Getter for __id"""
+
         return self.__id
 
+@dataclass(frozen=True)
+class Category:
+    category: str
+    __container: dict[str, list[Item]] = field(default_factory=dict)
 
-@dataclass
+    def add(self, item) -> None:
+        """Add item to category"""
+
+        if item.id not in self.__container:
+            self.__container[item.id] = item
+        else:
+            raise DuplicateIDError("ID was duplicated")
+
+    def __iter__(self):
+        return iter(self.__container.values())
+
+@dataclass(frozen=True)
 class Library:
     __name: str
-    __container: dict = field(default_factory=dict, init=False)
+    __container: dict[str, Category] = field(default_factory=dict, init=False)
 
     def add(self, item: Item) -> None:
         """Add item to library"""
-        self.__container[item.id] = item
+
+        if item.category not in self.__container:
+            self.__container[item.category] = Category(item.category)
+
+        self.__container[item.category].add(item)
 
     def get(self, item_id: str) -> Item:
         """Get item from library"""
@@ -52,23 +72,22 @@ class Library:
 
         raise EntityNotFound("ID was not found")
 
-    def find_by_category(self, category: str) -> tuple:
+    def find_by_category(self, category: str) -> Category:
         """Find item by category"""
 
-        found = []
-        for data in self.__container.values():
-            if data.category == category:
-                found.append(data)
+        if category not in self.__container:
+            return self.__container[category]
 
-        return tuple(found)
+        return Category(category)
 
     def find_by_name(self, name: str) -> tuple:
         """Find item by name"""
 
         found = []
-        for data in self.__container.values():
-            if data.name == name:
-                found.append(data)
+        for cat in self.__container:
+            for item in self.__container[cat]:
+                if item.name == name:
+                    found.append(item)
 
         return tuple(found)
 

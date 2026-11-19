@@ -5,10 +5,12 @@ def main():
     lib.add(Item(name="HELLO", category="python"))
     lib.add(Item(name="HELLO2", category="python2"))
 
-    print(Library.__dict__)
+    # print(lib)
 
-    for i in lib:
-        print(i)
+    # for i in lib:
+    #     print(i)
+
+    print(lib.find_by_name("HELLO"))
 
 
 if __name__ == "__main__":
