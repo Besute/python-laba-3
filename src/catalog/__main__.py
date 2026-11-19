@@ -1,16 +1,12 @@
 from .library import Item, Library
 
 def main():
-    lib = Library("123")
-    lib.add(Item(name="HELLO", category="python"))
-    lib.add(Item(name="HELLO2", category="python2"))
+    lib = Library("Audience")
 
-    # print(lib)
+    loaded = lib.read_from_json("classrooms.jsonl")
+    for data in loaded:
+        lib.add(data)
 
-    # for i in lib:
-    #     print(i)
-
-    print(lib.find_by_name("HELLO"))
 
 
 if __name__ == "__main__":

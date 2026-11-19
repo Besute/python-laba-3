@@ -1,14 +1,17 @@
-import time
+from time import strftime
 from dataclasses import dataclass, field
 from .errors import EntityNotFound, DuplicateIDError
+from json import loads
+from pathlib import Path
 
 @dataclass
 class Item:
     __next_id = "0"
 
-    name: str
     __id: str = field(init=False)
     category: str
+    class_number: str
+    campus: str
     date: str | None = field(default=None)
 
     def __new__(cls, *args, **kwargs):
@@ -18,7 +21,7 @@ class Item:
 
     def __post_init__(self):
         if self.date is None:
-            self.date = time.strftime("%d %m %Y")
+            self.date = strftime("%d %m %Y")
 
         self.__id = Item.__next_id
 
@@ -48,6 +51,22 @@ class Category:
 class Library:
     __name: str
     __container: dict[str, Category] = field(default_factory=dict, init=False)
+
+    @classmethod
+    def read_from_json(cls, filename):
+        """Reads data from JSON"""
+
+        path = Path(__file__).parent / "data" / filename
+
+        data = []
+        with open(path, "r", encoding="UTF-8") as f:
+            for line in f:
+                curr_data = loads(line)
+                data.append(Item(curr_data["category"], curr_data["audience_number"], curr_data["building_name"], curr_data["date"]))
+
+        return data
+
+
 
     def add(self, item: Item) -> None:
         """Add item to library"""
@@ -80,13 +99,13 @@ class Library:
 
         return Category(category)
 
-    def find_by_name(self, name: str) -> tuple:
+    def find_by_number(self, name: str) -> tuple:
         """Find item by name"""
 
         found = []
         for cat in self.__container:
             for item in self.__container[cat]:
-                if item.name == name:
+                if item.class_number == name:
                     found.append(item)
 
         return tuple(found)
