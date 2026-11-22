@@ -63,7 +63,7 @@ class Item:
     def id(self) -> None:
         del self.__id
 
-    def copy(self, *, with_id: bool = False):
+    def copy(self):
         """Copy item"""
 
         return Item(self.category, self.class_number, self.campus, self.date)
