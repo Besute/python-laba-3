@@ -1,11 +1,21 @@
-from time import strftime
-from dataclasses import dataclass, field
-from .errors import EntityNotFound, DuplicateIDError
+from dataclasses import dataclass
+from dataclasses import field
+from json import dumps
 from json import loads
 from pathlib import Path
+from time import strftime
+from time import strptime
+
+from .errors import DuplicateIDError
+from .errors import EntityNotFound
+from .errors import ItemError
+
 
 @dataclass
 class Item:
+    VALID_NUMBERS = "0123456789 "
+    VALID_DATE_FORMAT = "0123456789 :-"
+
     __next_id = "0"
 
     __id: str = field(init=False)
@@ -20,10 +30,28 @@ class Item:
         return super().__new__(cls)
 
     def __post_init__(self):
+        self.__check_class_number(self.class_number)
+
         if self.date is None:
-            self.date = strftime("%d %m %Y")
+            self.date = strftime("%Y-%m-%d")
+        else:
+            self.__check_date(self.date)
 
         self.__id = Item.__next_id
+
+    @classmethod
+    def __check_class_number(cls, class_number: str) -> None:
+        for c in class_number:
+            if c not in cls.VALID_NUMBERS:
+                raise ItemError("Class number must be a valid number")
+
+    @classmethod
+    def __check_date(cls, date: str) -> None:
+        try:
+            strptime(date, "%Y-%m-%d")
+        except ValueError:
+            print(date)
+            raise ItemError("Invalid date format")
 
     @property
     def id(self) -> str:
@@ -31,10 +59,20 @@ class Item:
 
         return self.__id
 
+    @id.deleter
+    def id(self) -> None:
+        del self.__id
+
+    def copy(self, *, with_id: bool = False):
+        """Copy item"""
+
+        return Item(self.category, self.class_number, self.campus, self.date)
+
+
 @dataclass(frozen=True)
 class Category:
     category: str
-    __container: dict[str, list[Item]] = field(default_factory=dict)
+    __container: dict[str, Item] = field(default_factory=dict)
 
     def add(self, item) -> None:
         """Add item to category"""
@@ -47,13 +85,33 @@ class Category:
     def __iter__(self):
         return iter(self.__container.values())
 
+
 @dataclass(frozen=True)
 class Library:
     __name: str
     __container: dict[str, Category] = field(default_factory=dict, init=False)
+    __operations: dict[str, str] = field(default_factory=dict, init=False)
+
+    def save(self, path: str) -> None:
+        """Save library to file"""
+
+        path = Path(__file__).parent / path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "w", encoding="UTF-8") as f:
+            for category in self.__container:
+                for item in self.__container[category]:
+                    curr_data = item.copy()
+                    curr_data.__delattr__("id")
+                    curr_data = curr_data.__dict__
+                    f.write(dumps(curr_data, ensure_ascii=False) + "\n")
 
     @classmethod
-    def read_from_json(cls, filename):
+    def save_operation(cls, operations: dict[str, str]) -> None:
+        """Saves last operation"""
+        pass
+
+    @classmethod
+    def read(cls, filename):
         """Reads data from JSON"""
 
         path = Path(__file__).parent / "data" / filename
@@ -62,11 +120,16 @@ class Library:
         with open(path, "r", encoding="UTF-8") as f:
             for line in f:
                 curr_data = loads(line)
-                data.append(Item(curr_data["category"], curr_data["audience_number"], curr_data["building_name"], curr_data["date"]))
+                data.append(
+                    Item(
+                        curr_data["category"],
+                        curr_data["audience_number"],
+                        curr_data["building_name"],
+                        curr_data["date"],
+                    )
+                )
 
         return data
-
-
 
     def add(self, item: Item) -> None:
         """Add item to library"""
