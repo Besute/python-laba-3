@@ -1,4 +1,6 @@
 .idea
+.venv/
+src/catalog/saved/
 src/streamstats/data
 **/__pycache__
 src/streamstats/output/*
