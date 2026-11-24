@@ -9,6 +9,7 @@ from time import strptime
 from .errors import DuplicateIDError
 from .errors import EntityNotFound
 from .errors import ItemError
+from .errors import UnsupportedFormatError
 
 
 @dataclass
@@ -31,7 +32,6 @@ class Item:
 
     def __post_init__(self):
         self.__check_class_number(self.class_number)
-
         if self.date is None:
             self.date = strftime("%Y-%m-%d")
         else:
@@ -99,6 +99,8 @@ class Library:
     __container: dict[str, Category] = field(default_factory=dict, init=False)
     __operations: dict[str, dict[str, Item | str]] = field(default_factory=dict, init=False)
 
+    VALID_EXTENSION = ("json", "jsonl")
+
     def save(self, path: str) -> None:
         """Save library to file"""
 
@@ -121,20 +123,27 @@ class Library:
     def read(cls, filename):
         """Reads data from JSON"""
 
-        path = Path(__file__).parent / "data" / filename
+        path = Path(filename)
+        filename_extention = path.suffix[1:]
+
+        if filename_extention not in cls.VALID_EXTENSION:
+            raise UnsupportedFormatError("Такой формат не поддерживается!")
 
         data = []
-        with open(path, "r", encoding="UTF-8") as f:
-            for line in f:
-                curr_data = loads(line)
-                data.append(
-                    Item(
-                        curr_data["category"],
-                        curr_data["audience_number"],
-                        curr_data["building_name"],
-                        curr_data["date"],
+        try:
+            with open(path, "r", encoding="UTF-8") as f:
+                for line in f:
+                    curr_data = loads(line)
+                    data.append(
+                        Item(
+                            curr_data["category"],
+                            curr_data["class_number"],
+                            curr_data["campus"],
+                            curr_data["date"],
+                        )
                     )
-                )
+        except Exception as e:
+            raise Exception(f"Что-то пошло не так: {e}")
 
         return data
 

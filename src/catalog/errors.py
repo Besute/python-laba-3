@@ -22,5 +22,9 @@ class DamagedFile(CatalogError):
     pass
 
 
+class NotFoundError(CatalogError):
+    pass
+
+
 class UnsupportedFormatError(CatalogError):
     pass
