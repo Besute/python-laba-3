@@ -50,7 +50,6 @@ class Item:
         try:
             strptime(date, "%Y-%m-%d")
         except ValueError:
-            print(date)
             raise ItemError("Invalid date format")
 
     @property
@@ -83,10 +82,15 @@ class Category:
             raise DuplicateIDError("ID was duplicated")
 
     def __iter__(self):
+
         return iter(self.__container.values())
 
     def remove(self, item_id: str) -> None:
         del self.__container[item_id]
+
+    def __len__(self) -> int:
+
+        return len(self.__container.keys())
 
 
 @dataclass(frozen=True)
@@ -134,6 +138,21 @@ class Library:
 
         return data
 
+    def undo_last(self):
+        if len(self.__operations) > 0:
+            last = self.__operations.popitem()
+            id_ = last[0]
+            operation = last[1]["operation"]
+            item = last[1]["item"]
+            if operation == "removed":
+                self.add(item)
+            elif operation == "added":
+                self.remove(id_)
+
+            return 0
+
+        raise ItemError("You didn't add or remove")
+
     def add(self, item: Item) -> None:
         """Add item to library"""
 
@@ -141,24 +160,30 @@ class Library:
             self.__container[item.category] = Category(item.category)
 
         self.__operations[item.id] = {
-            "operation": "add",
+            "operation": "added",
             "item": item.copy(),
         }
         self.__container[item.category].add(item)
 
     def get(self, item_id: str) -> Item:
-        """Get item from library"""
+        """Get item from library by ID"""
 
-        return self.__container[item_id]
+        for catalog in self.__container:
+            for item in self.__container[catalog]:
+                if item.id == item_id:
+                    return item
+
+        raise EntityNotFound("Item was not found")
 
     def remove(self, item_id: str) -> int:
-        """Remove item from library"""
+        """Remove item from library by ID"""
+
         for category in self.__container.keys():
             for item in self.__container[category]:
                 if item.id == item_id:
                     self.__operations[item_id] = {
                         "operation": "removed",
-                        "item": item.copy(),
+                        "item": item,
                     }
                     self.__container[category].remove(item_id)
                     return 0
@@ -184,10 +209,20 @@ class Library:
         return tuple(found)
 
     def __len__(self) -> int:
-        return len(self.__container)
+        acc = 0
+        for cat in self.__container.keys():
+            acc += len(self.__container[cat])
+
+        return acc
 
     def __iter__(self):
+
         return iter(self.__container.values())
 
     def __contains__(self, item_id: str) -> bool:
-        return item_id in self.__container
+        for category in self.__container.values():
+            for item in category:
+                if item.id == item_id:
+                    return True
+
+        return False

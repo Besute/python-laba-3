@@ -5,18 +5,17 @@ from .library import Library
 def main():
     lib = Library("Audience")
     try:
-        loaded = lib.read("classrooms.jsonl")
-        for data in loaded:
-            lib.add(data)
+        # loaded = lib.read("classrooms.jsonl")
+        # for data in loaded:
+        #     lib.add(data)
 
         item1 = Item("SKIBIDI", "67", "CAMPUS")
         lib.add(item1)
-        lib.remove("1")
-        lib.remove("11111")
+        lib.undo_last()
 
         lib.save("saved/classrooms.jsonl")
     except Exception as e:
-        print(e)
+        print("Exception:", e)
     finally:
         lib.save("saved/classrooms.jsonl")
 
