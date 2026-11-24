@@ -85,12 +85,15 @@ class Category:
     def __iter__(self):
         return iter(self.__container.values())
 
+    def remove(self, item_id: str) -> None:
+        del self.__container[item_id]
+
 
 @dataclass(frozen=True)
 class Library:
     __name: str
     __container: dict[str, Category] = field(default_factory=dict, init=False)
-    __operations: dict[str, str] = field(default_factory=dict, init=False)
+    __operations: dict[str, dict[str, Item | str]] = field(default_factory=dict, init=False)
 
     def save(self, path: str) -> None:
         """Save library to file"""
@@ -137,6 +140,10 @@ class Library:
         if item.category not in self.__container:
             self.__container[item.category] = Category(item.category)
 
+        self.__operations[item.id] = {
+            "operation": "add",
+            "item": item.copy(),
+        }
         self.__container[item.category].add(item)
 
     def get(self, item_id: str) -> Item:
@@ -146,12 +153,15 @@ class Library:
 
     def remove(self, item_id: str) -> int:
         """Remove item from library"""
-
-        if item_id in self.__container:
-            del self.__container[item_id]
-
-            return 0
-
+        for category in self.__container.keys():
+            for item in self.__container[category]:
+                if item.id == item_id:
+                    self.__operations[item_id] = {
+                        "operation": "removed",
+                        "item": item.copy(),
+                    }
+                    self.__container[category].remove(item_id)
+                    return 0
         raise EntityNotFound("ID was not found")
 
     def find_by_category(self, category: str) -> Category:
