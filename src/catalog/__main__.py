@@ -11,7 +11,7 @@ def main():
 
         item1 = Item("SKIBIDI", "67", "CAMPUS")
         lib.add(item1)
-        lib.undo_last()
+        print(lib.find_by_category("SKIBIDI"))
     except Exception as e:
         print("Exception:", e)
     finally:

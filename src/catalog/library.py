@@ -97,7 +97,7 @@ class Category:
 class Library:
     __name: str
     __container: dict[str, Category] = field(default_factory=dict, init=False)
-    __operations: dict[str, dict[str, Item | str]] = field(default_factory=dict, init=False)
+    __operations: list[dict[str, Item | str]] = field(default_factory=list, init=False)
 
     VALID_EXTENSION = ("json", "jsonl")
 
@@ -149,10 +149,10 @@ class Library:
 
     def undo_last(self):
         if len(self.__operations) > 0:
-            last = self.__operations.popitem()
-            id_ = last[0]
-            operation = last[1]["operation"]
-            item = last[1]["item"]
+            last = self.__operations.pop()
+            id_ = last["id"]
+            operation = last["operation"]
+            item = last["item"]
             if operation == "removed":
                 self.add(item)
             elif operation == "added":
@@ -168,10 +168,7 @@ class Library:
         if item.category not in self.__container:
             self.__container[item.category] = Category(item.category)
 
-        self.__operations[item.id] = {
-            "operation": "added",
-            "item": item.copy(),
-        }
+        self.__operations[item.id] = {"operation": "added", "item": item.copy(), "id": item.id}
         self.__container[item.category].add(item)
 
     def get(self, item_id: str) -> Item:
@@ -190,10 +187,7 @@ class Library:
         for category in self.__container.keys():
             for item in self.__container[category]:
                 if item.id == item_id:
-                    self.__operations[item_id] = {
-                        "operation": "removed",
-                        "item": item,
-                    }
+                    self.__operations[item_id] = {"operation": "removed", "item": item, "id": item.id}
                     self.__container[category].remove(item_id)
                     return 0
         raise EntityNotFound("ID was not found")
@@ -204,7 +198,7 @@ class Library:
         if category not in self.__container:
             return self.__container[category]
 
-        return Category(category)
+        return self.__container[category]
 
     def find_by_number(self, name: str) -> tuple:
         """Find item by name"""
@@ -213,7 +207,14 @@ class Library:
         for cat in self.__container:
             for item in self.__container[cat]:
                 if item.class_number == name:
-                    found.append(item)
+                    found.append(
+                        {
+                            "id": item.id,
+                            "category": item.category,
+                            "class_number": item.class_number,
+                            "campus": item.campus,
+                        }
+                    )
 
         return tuple(found)
 
